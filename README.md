@@ -11,11 +11,13 @@ Nivel 1 ──── Módulos, Controladores, Servicios, DTOs básicos
     │
 Nivel 2 ──── TypeORM, Entidades, Repositorios, Migraciones
     │
-Nivel 3 ──── Validación avanzada, Swagger, Response DTOs
+Nivel 3 ──── Relaciones, Índices, QueryBuilder, Transacciones
     │
-Nivel 4 ──── Autenticación JWT, Guards, Passport, RBAC
+Nivel 4 ──── Validación avanzada, Swagger, Response DTOs
     │
-Nivel 5 ──── Unit Tests, E2E Tests, Cobertura
+Nivel 5 ──── Autenticación JWT, Guards, Passport, RBAC
+    │
+Nivel 6 ──── Unit Tests, E2E Tests, Cobertura
 ```
 
 ---
@@ -70,9 +72,12 @@ Modelo sugerido: `{ id, title, description, status: 'pending' | 'in-progress' | 
 |----------|-------------|
 | **Entidades** | Clases que mapean a tablas DB con decoradores TypeORM. |
 | **Repository** | Abstracción para operaciones DB por entidad. |
-| **DataSource** | Configuración de conexión a la base de datos. |
+| **DataSource** | Objeto central de configuración y conexión a la base de datos. |
 | **Soft Delete** | Marcar registro como eliminado sin borrarlo físicamente (`deletedAt`). |
 | **Migraciones** | Scripts versionados para cambios de esquema. Nunca `synchronize: true` en prod. |
+| **Variables de entorno** | `@nestjs/config` + Joi para validar configuración de DB al arranque. |
+| **UUID** | Identificador único universal. Preferido sobre auto-increment en APIs REST. |
+| **Columnas especiales** | `@CreateDateColumn`, `@UpdateDateColumn`, `@DeleteDateColumn` — TypeORM las gestiona automáticamente. |
 
 ### Proyecto de práctica
 
@@ -92,16 +97,75 @@ Modelo sugerido: `{ id (uuid), name, description, price, stock, createdAt, updat
 ### Checklist
 
 - [ ] Definir entidad con UUID, `createdAt`, `updatedAt`, `deletedAt`
-- [ ] Configurar `TypeOrmModule.forRoot()` con variables de entorno
+- [ ] Configurar `TypeOrmModule.forRoot()` con variables de entorno via `ConfigService`
+- [ ] Crear `src/data-source.ts` para CLI de migraciones
 - [ ] Usar `repository.find()`, `findOne()`, `save()`, `softDelete()`
 - [ ] Lanzar `NotFoundException` cuando `findOne` retorna `null`
 - [ ] Implementar paginación con `findAndCount()`
-- [ ] Generar y ejecutar migraciones
+- [ ] Generar y ejecutar migraciones con TypeORM CLI
 - [ ] Nunca usar `synchronize: true` fuera de desarrollo local
+- [ ] Variables de entorno validadas con Joi en `app.module.ts`
 
 ---
 
-## Nivel 3 — Validación y Documentación
+## Nivel 3 — Relaciones, Índices y Consultas Avanzadas
+
+### Conceptos
+
+| Concepto | Descripción |
+|----------|-------------|
+| **OneToMany / ManyToOne** | Relación padre-hijo. Ej: una categoría tiene muchos productos. |
+| **ManyToMany** | Relación N:N. TypeORM crea tabla pivot automáticamente con `@JoinTable`. |
+| **OneToOne** | Relación 1:1. Ej: un usuario tiene un perfil. Requiere `@JoinColumn`. |
+| **Eager loading** | Cargar relación automáticamente en cada query con `eager: true`. Cuidado: siempre carga aunque no se necesite. |
+| **Lazy loading** | Cargar relación explícitamente via `relations: ['entity']` o `QueryBuilder`. |
+| **@Index** | Mejora rendimiento en columnas usadas en filtros o búsquedas frecuentes. |
+| **QueryBuilder** | API fluida para consultas complejas con JOINs, condiciones dinámicas y subqueries. |
+| **Transacciones** | Operaciones atómicas con `QueryRunner`: si una falla, todo revierte. |
+| **Seeds** | Scripts para poblar la DB con datos iniciales de desarrollo o testing. |
+| **Cascade** | Propagar operaciones (insert, update, delete) automáticamente a entidades relacionadas. |
+
+### Proyecto de práctica
+
+**API REST de E-commerce (Categorías + Productos + Tags)**
+
+```
+GET    /categories             → listar categorías con conteo de productos
+GET    /categories/:id         → categoría con sus productos
+POST   /categories             → crear categoría
+DELETE /categories/:id         → eliminar (solo si no tiene productos activos)
+
+GET    /products               → listar con filtros: ?categoryId=x&tag=y&minPrice=z
+GET    /products/:id           → producto con categoría y tags
+POST   /products               → crear con categoryId y tags[]
+PATCH  /products/:id           → actualizar
+DELETE /products/:id           → soft delete
+```
+
+Modelo sugerido:
+- `Category: { id, name, slug, products: Product[] }`
+- `Product: { id, name, sku, price, stock, category: Category, tags: Tag[], createdAt, updatedAt, deletedAt }`
+- `Tag: { id, name, products: Product[] }`
+
+Relaciones:
+- `Category` → `Product`: OneToMany / ManyToOne
+- `Product` ↔ `Tag`: ManyToMany con tabla pivot `product_tags`
+
+### Checklist
+
+- [ ] OneToMany en `Category`, ManyToOne en `Product` (con FK `category_id`)
+- [ ] ManyToMany entre `Product` y `Tag` con `@JoinTable` en `Product`
+- [ ] `@Index` en columnas de búsqueda frecuente: `sku`, `slug`, `price`
+- [ ] QueryBuilder con `leftJoinAndSelect` para cargar relaciones con filtros opcionales
+- [ ] Transacción con `QueryRunner`: crear producto y actualizar stock en una sola operación atómica
+- [ ] Seed script ejecutable con `ts-node` que inserta categorías y productos de prueba
+- [ ] Cascade configurado correctamente (no eliminar categoría con productos activos → `ConflictException`)
+- [ ] Entender cuándo usar `eager: true` vs `relations: []` vs QueryBuilder
+- [ ] Índice compuesto en casos necesarios (`@Index(['categoryId', 'price'])`)
+
+---
+
+## Nivel 4 — Validación y Documentación
 
 ### Conceptos
 
@@ -144,7 +208,7 @@ Requisitos:
 
 ---
 
-## Nivel 4 — Autenticación JWT
+## Nivel 5 — Autenticación JWT
 
 ### Conceptos
 
@@ -187,7 +251,7 @@ GET    /admin/users        → solo accesible con rol 'admin'
 
 ---
 
-## Nivel 5 — Tests
+## Nivel 6 — Tests
 
 ### Conceptos
 
@@ -270,10 +334,12 @@ npm install class-validator class-transformer
 npm install @nestjs/typeorm typeorm pg
 npm install @nestjs/config joi    # variables de entorno
 
-# Nivel 3 — Swagger
+# Nivel 3 — No hay dependencias nuevas (usa las de Nivel 2)
+
+# Nivel 4 — Swagger
 npm install @nestjs/swagger swagger-ui-express
 
-# Nivel 4 — Auth JWT
+# Nivel 5 — Auth JWT
 npm install @nestjs/jwt @nestjs/passport passport passport-jwt bcrypt
 npm install -D @types/passport-jwt @types/bcrypt
 ```
@@ -292,6 +358,43 @@ npx typeorm migration:revert -d src/data-source.ts
 
 # Ver estado de migraciones
 npx typeorm migration:show -d src/data-source.ts
+```
+
+### PostgreSQL — Utilidades
+
+```bash
+# Levantar PostgreSQL con Docker (desarrollo local)
+docker run --name pg-dev \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=secret \
+  -e POSTGRES_DB=mydb \
+  -p 5432:5432 \
+  -d postgres:16
+
+# Conectarse con psql
+psql -h localhost -U admin -d mydb
+
+# Comandos útiles dentro de psql
+\dt              # listar tablas
+\d nombre_tabla  # describir tabla (columnas, índices, FK)
+\di              # listar índices
+\x               # formato expandido (legible para filas anchas)
+
+# Ver migraciones ejecutadas
+SELECT * FROM migrations ORDER BY timestamp DESC;
+
+# Ver índices de una tabla
+SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'products';
+```
+
+### Seeds
+
+```bash
+# Ejecutar seed script con ts-node
+npx ts-node src/database/seeds/seed.ts
+
+# Con script en package.json
+npm run seed
 ```
 
 ### Tests

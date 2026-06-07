@@ -1,98 +1,318 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Nivel 1 — API REST de Tareas (sin base de datos)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+CRUD completo de tareas con almacenamiento en memoria (array). Sin base de datos.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Conceptos que practica
 
-## Description
+| Concepto | Descripción |
+|----------|-------------|
+| **Módulos** | Unidad organizacional. Cada feature tiene su propio módulo. |
+| **Controladores** | Reciben requests HTTP, delegan al servicio. |
+| **Servicios** | Lógica de negocio con `@Injectable()`. |
+| **DTOs** | Definen la forma del request con `class-validator`. |
+| **ValidationPipe** | Valida y transforma datos de entrada automáticamente. |
+| **ParseUUIDPipe** | Valida que un param sea UUID válido antes de llegar al servicio. |
+| **NotFoundException** | Excepción HTTP 404 integrada de NestJS. |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Endpoints
 
-## Project setup
-
-```bash
-$ npm install
+```
+GET    /tasks              → listar tareas (filtro: ?status=PENDING)
+GET    /tasks/:id          → obtener por UUID
+POST   /tasks              → crear tarea
+PATCH  /tasks/:id/status   → actualizar status
+DELETE /tasks/:id          → eliminar
 ```
 
-## Compile and run the project
+---
+
+## Paso a paso
+
+### 1. Crear el proyecto
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+nest new nivel-1-tasks-api
+cd nivel-1-tasks-api
 ```
 
-## Run tests
+### 2. Instalar dependencias
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install class-validator class-transformer
+npm install uuid
+npm install -D @types/uuid
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 3. Generar el módulo de tareas
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+nest g module tasks
+nest g controller tasks --no-spec
+nest g service tasks --no-spec
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Definir el modelo
 
-## Resources
+Crear `src/tasks/task.model.ts`:
 
-Check out a few resources that may come in handy when working with NestJS:
+```typescript
+export enum TaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE',
+}
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+}
+```
 
-## Support
+### 5. Crear los DTOs
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**`src/tasks/dto/create-task.dto.ts`**
 
-## Stay in touch
+```typescript
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+export class CreateTaskDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  title: string;
 
-## License
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+}
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**`src/tasks/dto/update-task.dto.ts`**
+
+```typescript
+import { IsEnum } from 'class-validator';
+import { TaskStatus } from '../task.model';
+
+export class UpdateTaskDto {
+  @IsEnum(TaskStatus)
+  status: TaskStatus;
+}
+```
+
+**`src/tasks/dto/get-tasks-filter.dto.ts`**
+
+```typescript
+import { IsEnum, IsOptional } from 'class-validator';
+import { TaskStatus } from '../task.model';
+
+export class GetTaskFilterDto {
+  @IsOptional()
+  @IsEnum(TaskStatus)
+  status?: TaskStatus;
+}
+```
+
+### 6. Implementar el servicio
+
+`src/tasks/tasks.service.ts`:
+
+```typescript
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { v4 as uuid } from 'uuid';
+import { Task, TaskStatus } from './task.model';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { GetTaskFilterDto } from './dto/get-tasks-filter.dto';
+
+@Injectable()
+export class TasksService {
+  private tasks: Task[] = [];
+
+  getAll(filter: GetTaskFilterDto): Task[] {
+    const { status } = filter;
+    if (status) return this.tasks.filter((t) => t.status === status);
+    return this.tasks;
+  }
+
+  getById(id: string): Task {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) throw new NotFoundException(`Tarea ${id} no encontrada`);
+    return task;
+  }
+
+  create(dto: CreateTaskDto): Task {
+    const task: Task = { id: uuid(), ...dto, status: TaskStatus.PENDING };
+    this.tasks.push(task);
+    return task;
+  }
+
+  updateStatus(id: string, dto: UpdateTaskDto): Task {
+    const task = this.getById(id);
+    task.status = dto.status;
+    return task;
+  }
+
+  delete(id: string): void {
+    this.getById(id);
+    this.tasks = this.tasks.filter((t) => t.id !== id);
+  }
+}
+```
+
+### 7. Implementar el controlador
+
+`src/tasks/tasks.controller.ts`:
+
+```typescript
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { TasksService } from './tasks.service';
+import { Task } from './task.model';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { GetTaskFilterDto } from './dto/get-tasks-filter.dto';
+
+@Controller('tasks')
+export class TasksController {
+  constructor(private readonly tasksService: TasksService) {}
+
+  @Get()
+  findAll(@Query() filter: GetTaskFilterDto): Task[] {
+    return this.tasksService.getAll(filter);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string): Task {
+    return this.tasksService.getById(id);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() dto: CreateTaskDto): Task {
+    return this.tasksService.create(dto);
+  }
+
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTaskDto,
+  ): Task {
+    return this.tasksService.updateStatus(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  delete(@Param('id', ParseUUIDPipe) id: string): void {
+    this.tasksService.delete(id);
+  }
+}
+```
+
+### 8. Registrar el módulo
+
+`src/tasks/tasks.module.ts` (verificar que incluya controller y service):
+
+```typescript
+import { Module } from '@nestjs/common';
+import { TasksController } from './tasks.controller';
+import { TasksService } from './tasks.service';
+
+@Module({
+  controllers: [TasksController],
+  providers: [TasksService],
+})
+export class TasksModule {}
+```
+
+Importar en `src/app.module.ts`:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { TasksModule } from './tasks/tasks.module';
+
+@Module({
+  imports: [TasksModule],
+})
+export class AppModule {}
+```
+
+### 9. Configurar ValidationPipe global
+
+`src/main.ts`:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+### 10. Levantar el servidor
+
+```bash
+npm run start:dev
+```
+
+---
+
+## Probar la API
+
+```bash
+# Crear tarea
+curl -X POST http://localhost:3000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Aprender NestJS","description":"Completar nivel 1"}'
+
+# Listar tareas
+curl http://localhost:3000/tasks
+
+# Filtrar por status
+curl "http://localhost:3000/tasks?status=PENDING"
+
+# Obtener por ID (reemplazar <uuid>)
+curl http://localhost:3000/tasks/<uuid>
+
+# Actualizar status
+curl -X PATCH http://localhost:3000/tasks/<uuid>/status \
+  -H "Content-Type: application/json" \
+  -d '{"status":"IN_PROGRESS"}'
+
+# Eliminar
+curl -X DELETE http://localhost:3000/tasks/<uuid>
+```
+
+---
+
+## Checklist
+
+- [x] Crear proyecto con `nest new`
+- [x] Generar módulo, controlador y servicio con `nest g`
+- [x] Usar `@Body()`, `@Param()`, `@Query()` correctamente
+- [x] Crear DTOs con `class-validator`
+- [x] Registrar `ValidationPipe` global en `main.ts`
+- [x] Lanzar `NotFoundException` cuando tarea no existe
+- [x] Entender flujo: Request → Controller → Service → Response
