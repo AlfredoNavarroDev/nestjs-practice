@@ -1,12 +1,31 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { envValidationSchema } from './config/env.validation';
 import { ProductsModule } from './products/products.module';
-import { ServiceService } from './service/service.service';
 
 @Module({
-  imports: [ProductsModule],
-  controllers: [AppController],
-  providers: [AppService, ServiceService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: { abortEarly: true },
+    }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
+        username: config.get('DB_USER'),
+        password: config.get('DB_PASS'),
+        database: config.get('DB_NAME'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        synchronize: false,
+      }),
+    }),
+    ProductsModule,
+  ],
 })
 export class AppModule {}
