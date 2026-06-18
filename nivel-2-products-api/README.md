@@ -477,12 +477,12 @@ npx typeorm migration:revert -d src/data-source.ts
 
 ## Checklist
 
-- [ ] Definir entidad con UUID, `createdAt`, `updatedAt`, `deletedAt`
-- [ ] Configurar `TypeOrmModule.forRootAsync()` con `ConfigService`
-- [ ] Crear `src/data-source.ts` para CLI de migraciones
-- [ ] Usar `repository.findOne()`, `save()`, `softDelete()`
-- [ ] Lanzar `NotFoundException` cuando `findOne` retorna `null`
-- [ ] Implementar paginación con `findAndCount()`
-- [ ] Generar y ejecutar migración con TypeORM CLI
-- [ ] `synchronize: false` siempre
-- [ ] Variables de entorno validadas con Joi
+- [x] Definir entidad con UUID, `createdAt`, `updatedAt`, `deletedAt`
+- [x] Configurar `TypeOrmModule.forRootAsync()` con `ConfigService`
+- [x] Crear `src/data-source.ts` para CLI de migraciones
+- [x] Usar `repository.findOne()`, `save()`, `softDelete()`
+- [x] Lanzar `NotFoundException` cuando `findOne` retorna `null`
+- [x] Implementar paginación con `findAndCount()`
+- [x] Generar y ejecutar migración con TypeORM CLI
+- [x] `synchronize: false` siempre
+- [x] Variables de entorno validadas con Joi
