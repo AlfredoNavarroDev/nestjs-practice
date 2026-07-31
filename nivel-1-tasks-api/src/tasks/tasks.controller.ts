@@ -26,6 +26,8 @@ export class TasksController {
     return this.taskService.getAll(filter);
   }
 
+  // ParseUUIDPipe valida el formato del id antes de llegar al service;
+  // si no es un UUID v4 válido, responde 400 automáticamente.
   @Get(':id')
   getById(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string): Task {
     return this.taskService.getById(id);

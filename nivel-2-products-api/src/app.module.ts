@@ -22,6 +22,8 @@ import { ProductsModule } from './products/products.module';
         database: config.get('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        // false a propósito: el esquema se gestiona con migraciones
+        // (ver src/data-source.ts), nunca con auto-sync en este nivel.
         synchronize: false,
       }),
     }),

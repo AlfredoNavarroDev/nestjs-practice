@@ -30,6 +30,8 @@ export class Product {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  // TypeORM gestiona esta columna: al hacer softDelete() la setea con la
+  // fecha actual en vez de borrar la fila; los queries normales la ignoran.
   @DeleteDateColumn()
   deletedAt: Date | null;
 }

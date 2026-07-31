@@ -157,7 +157,7 @@ Relaciones:
 - [ ] ManyToMany entre `Product` y `Tag` con `@JoinTable` en `Product`
 - [ ] `@Index` en columnas de búsqueda frecuente: `sku`, `slug`, `price`
 - [ ] QueryBuilder con `leftJoinAndSelect` para cargar relaciones con filtros opcionales
-- [ ] Transacción con `QueryRunner`: crear producto y actualizar stock en una sola operación atómica
+- [x] Transacción con `QueryRunner`: crear producto y actualizar stock en una sola operación atómica
 - [ ] Seed script ejecutable con `ts-node` que inserta categorías y productos de prueba
 - [ ] Cascade configurado correctamente (no eliminar categoría con productos activos → `ConflictException`)
 - [ ] Entender cuándo usar `eager: true` vs `relations: []` vs QueryBuilder

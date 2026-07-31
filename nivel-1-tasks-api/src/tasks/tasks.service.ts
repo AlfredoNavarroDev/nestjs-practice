@@ -7,12 +7,15 @@ import { GetTaskFilterDto } from './dto/get-tasks-filter.dto';
 
 @Injectable()
 export class TasksService {
+  // Almacenamiento en memoria (sin DB): se pierde al reiniciar la app.
+  // Es el punto clave de Nivel 1, en Nivel 2 esto se reemplaza por un Repository.
   private tasks: Task[] = [];
 
   getAll(filter: GetTaskFilterDto): Task[] {
     const { status } = filter;
     let tasks = this.tasks;
     if (status) {
+      // Filtro opcional por query param (?status=...), ver GetTaskFilterDto.
       tasks = tasks.filter((task) => task.status === status);
     }
     return tasks;
@@ -29,6 +32,7 @@ export class TasksService {
       id: uuid(),
       title: dto.title,
       description: dto.description,
+      // Toda tarea nace en estado PENDING; el cliente no puede definirlo al crear.
       status: TaskStatus.PENDING,
     };
     this.tasks.push(task);
